@@ -648,6 +648,8 @@ func (table *Table) InitRewrite(config cfg.Config) error {
 
 func (table *Table) InitRoutes(config cfg.Config, meta toml.MetaData) error {
 	for _, routeConfig := range config.Route {
+		log.Infof("Add route type '%s'", routeConfig.Type)
+
 		switch routeConfig.Type {
 		case "sendAllMatch":
 			destinations, err := imperatives.ParseDestinations(routeConfig.Destinations, table, true, routeConfig.Key)
@@ -857,6 +859,13 @@ func (table *Table) InitRoutes(config cfg.Config, meta toml.MetaData) error {
 			}
 
 			route, err := route.NewCloudWatch(routeConfig.Key, routeConfig.Prefix, routeConfig.Substr, routeConfig.Regex, awsProfile, awsRegion, awsNamespace, awsDimensions, bufSize, flushMaxSize, flushMaxWait, storageResolution, routeConfig.Blocking)
+			if err != nil {
+				log.Error(err.Error())
+				return fmt.Errorf("error adding route '%s'", routeConfig.Key)
+			}
+			table.AddRoute(route)
+		case "redis":
+			route, err := route.NewRedis(routeConfig.Key, routeConfig.Prefix, routeConfig.Substr, routeConfig.Regex)
 			if err != nil {
 				log.Error(err.Error())
 				return fmt.Errorf("error adding route '%s'", routeConfig.Key)
